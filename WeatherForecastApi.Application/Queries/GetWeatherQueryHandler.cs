@@ -1,5 +1,5 @@
 ﻿using MediatR;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using WeatherForecastApi.Application.Exceptions;
 using WeatherForecastApi.Application.Interfaces;
 using WeatherForecastApi.Application.Mapping;
@@ -11,12 +11,15 @@ public class GetWeatherQueryHandler : IRequestHandler<GetWeatherQuery, WeatherQu
 {
     private readonly IWeatherApiClient _client;
     private readonly WeatherQueryResultFromApiModelMapper _weatherFromApiResponseToQueryResultModelMapper;
+    private readonly ILogger<GetWeatherQueryHandler> _logger;
 
     public GetWeatherQueryHandler(IWeatherApiClient client,
-        WeatherQueryResultFromApiModelMapper weatherFromApiResponseToQueryResultModelMapper)
+        WeatherQueryResultFromApiModelMapper weatherFromApiResponseToQueryResultModelMapper,
+        ILogger<GetWeatherQueryHandler> logger)
     {
         _client = client;
         _weatherFromApiResponseToQueryResultModelMapper = weatherFromApiResponseToQueryResultModelMapper;
+        _logger = logger;
     }
 
     public async Task<WeatherQueryResult> Handle(GetWeatherQuery request, CancellationToken ct)
@@ -31,7 +34,7 @@ public class GetWeatherQueryHandler : IRequestHandler<GetWeatherQuery, WeatherQu
         catch (ApplicationWeatherAPIException) { throw; }
         catch (Exception ex)
         {
-            Log.Error(ex, "Ошибка при обработке запроса GetWeatherQuery: {Message}", ex.Message);
+            _logger.LogError(ex, "Ошибка при обработке запроса GetWeatherQuery: {Message}", ex.Message);
             throw new ApplicationUnknownException();
         }
     }

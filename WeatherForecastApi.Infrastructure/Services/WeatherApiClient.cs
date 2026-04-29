@@ -1,5 +1,5 @@
-﻿using Microsoft.Extensions.Options;
-using Serilog;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Text.Json;
 using WeatherForecast.Api.Implementation.Mapping;
 using WeatherForecastApi.Application.Exceptions;
@@ -15,12 +15,14 @@ public class WeatherApiClient(
     HttpClient httpClient,
     IOptionsSnapshot<ConfigurationOptions> options,
     UrlFromConfigurationOptionsMapper configurationOptionsToUrlMapper,
-    WeatherApiFromResponseMapper weatherApiFromResponseMapper
-    ) : IWeatherApiClient
+    WeatherApiFromResponseMapper weatherApiFromResponseMapper,
+    ILogger<WeatherApiClient> logger
+) : IWeatherApiClient
 {
     private readonly HttpClient _httpClient = httpClient;
     private readonly ConfigurationOptions _options = options.Value;
     private readonly UrlFromConfigurationOptionsMapper _configurationOptionsToUrlMapper = configurationOptionsToUrlMapper;
+    private readonly ILogger<WeatherApiClient> _logger = logger;
 
     public async Task<WeatherApiModel> GetAsync()
     {
@@ -40,32 +42,32 @@ public class WeatherApiClient(
         }
         catch (InvalidOperationException ex)
         {
-            Log.Error(ex, ex.Message);
+            _logger.LogError(ex, ex.Message);
             throw new ApplicationConfigurationException();
         }
         catch (ArgumentOutOfRangeException ex)
         {
-            Log.Error(ex, ex.Message);
+            _logger.LogError(ex, ex.Message);
             throw new ApplicationConfigurationException();
         }
         catch (HttpRequestException ex)
         {
-            Log.Error(ex, "Ошибка при выполнении HTTP-запроса: {Message}", ex.Message);
+            _logger.LogError(ex, "Ошибка при выполнении HTTP-запроса: {Message}", ex.Message);
             throw new ApplicationWeatherAPIException();
         }
         catch (JsonException ex)
         {
-            Log.Error(ex, "Ошибка при десериализации ответа API: {Message}", ex.Message);
+            _logger.LogError(ex, "Ошибка при десериализации ответа API: {Message}", ex.Message);
             throw new ApplicationWeatherAPIException();
         }
         catch (TaskCanceledException ex)
         {
-            Log.Error(ex, "HTTP-запрос был отменен: {Message}", ex.Message);
+            _logger.LogError(ex, "HTTP-запрос был отменен: {Message}", ex.Message);
             throw new ApplicationWeatherAPIException();
         }
         catch (Exception ex)
         {
-            Log.Error(ex, ex.Message);
+            _logger.LogError(ex, ex.Message);
             throw new ApplicationWeatherAPIException();
         }
     }
