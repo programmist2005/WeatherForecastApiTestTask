@@ -1,0 +1,350 @@
+﻿@model WeatherResultViewModel
+@{
+	ViewData["Title"] = "Прогноз погоды";
+}
+
+<div class="container mt-4">
+	@if (Model.IsError)
+	{
+		<div class="alert alert-danger d-flex justify-content-between align-items-center">
+			<div>
+				<h4>Ошибка</h4>
+				<p class="mb-0">@Model.ErrorMessage</p>
+			</div>
+			<div>
+				<button type="button" class="btn btn-primary" onclick="location.reload()">
+					<i class="bi bi-arrow-clockwise"></i> Обновить
+				</button>
+			</div>
+		</div>
+	}
+	else if (Model.Result != null)
+	{
+		var current = Model.Result.Current;
+
+		<!-- Настройки единиц измерения (изначально свёрнутый блок) -->
+		<div class="card mb-4">
+			<div class="card-header bg-light" role="button" data-bs-toggle="collapse" href="#unitSettings" aria-expanded="false" aria-controls="unitSettings">
+				<h6 class="mb-0 d-flex justify-content-between align-items-center">
+					<span>Настройки единиц измерения</span>
+					<span class="badge bg-primary text-white">
+						<i class="bi bi-chevron-right"></i>
+					</span>
+				</h6>
+			</div>
+
+			<div class="collapse" id="unitSettings">
+				<div class="card-body">
+					<!-- Выбор температуры -->
+					<div class="mb-3">
+						<label class="fw-bold mb-2">Температура:</label>
+						<div class="form-check form-check-inline">
+							<input class="form-check-input" type="radio" name="tempUnit" id="tempC" value="c" checked>
+							<label class="form-check-label" for="tempC">°C (Цельсий)</label>
+						</div>
+						<div class="form-check form-check-inline">
+							<input class="form-check-input" type="radio" name="tempUnit" id="tempF" value="f">
+							<label class="form-check-label" for="tempF">°F (Фаренгейт)</label>
+						</div>
+					</div>
+
+					<!-- Выбор скорости ветра -->
+					<div>
+						<label class="fw-bold mb-2">Скорость ветра:</label>
+						<div class="form-check form-check-inline">
+							<input class="form-check-input" type="radio" name="speedUnit" id="speedKph" value="kph" checked>
+							<label class="form-check-label" for="speedKph">км/ч</label>
+						</div>
+						<div class="form-check form-check-inline">
+							<input class="form-check-input" type="radio" name="speedUnit" id="speedMph" value="mph">
+							<label class="form-check-label" for="speedMph">mph</label>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="row">
+			<!-- Левая колонка: текущая погода -->
+			<div class="col-md-6">
+				<div class="card mb-4">
+					<div class="card-body">
+						<h2>@current.City</h2>
+
+						@if (!string.IsNullOrEmpty(current.Region) || !string.IsNullOrEmpty(current.Country))
+						{
+							var location = string.Join(", ", new[] { current.Region, current.Country }
+								.Where(s => !string.IsNullOrEmpty(s)));
+							<p class="text-muted">@location</p>
+						}
+
+						<!-- Температура -->
+						<p>
+							<strong>Температура:</strong>
+							<span class="temperature"
+								  data-c="@current.TempC"
+								  data-f="@current.TempF">
+								@current.TempC°C
+							</span>
+						</p>
+
+						<!-- Ощущается как -->
+						<p>
+							<strong>Ощущается как:</strong>
+							<span class="feels-like"
+								  data-c="@current.FeelsLikeC"
+								  data-f="@current.FeelsLikeF">
+								@current.FeelsLikeC°C
+							</span>
+						</p>
+
+						<!-- Ветер -->
+						<p>
+							<strong>Ветер:</strong>
+							<span class="wind-speed"
+								  data-kph="@current.WindKph"
+								  data-mph="@current.WindMph">
+								@current.WindKph км/ч
+							</span>,
+							направление: @current.WindDirection (@current.WindDegree°)
+						</p>
+
+						<!-- Порывы ветра -->
+						<p>
+							<strong>Порывы:</strong>
+							<span class="gust-speed"
+								  data-kph="@current.GustKph"
+								  data-mph="@current.GustMph">
+								@current.GustKph км/ч
+							</span>
+						</p>
+
+						<!-- Охлаждение ветром -->
+						<p>
+							<strong>Охлаждение ветром:</strong>
+							<span class="windchill"
+								  data-c="@current.WindchillC"
+								  data-f="@current.WindchillF">
+								@current.WindchillC°C
+							</span>
+						</p>
+
+						<!-- Влажность -->
+						<p><strong>Влажность:</strong> @current.HumidityPercent%</p>
+
+						<!-- Облачность -->
+						<p><strong>Облачность:</strong> @current.CloudPercent%</p>
+
+						<!-- УФ‑индекс -->
+						<p><strong>УФ‑индекс:</strong> @current.Uv</p>
+
+
+						<!-- Состояние -->
+						<p><strong>Состояние:</strong> @current.ConditionText</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- Правая колонка: вкладки с прогнозами -->
+			<div class="col-md-6">
+				<!-- Вкладки Bootstrap -->
+				<ul class="nav nav-tabs mb-3" id="weatherTabs" role="tablist">
+					<li class="nav-item" role="presentation">
+						<button class="nav-link active" id="hourly-tab" data-bs-toggle="tab"
+								data-bs-target="#hourly" type="button" role="tab">
+							Почасовой прогноз
+						</button>
+					</li>
+					<li class="nav-item" role="presentation">
+						<button class="nav-link" id="daily-tab" data-bs-toggle="tab"
+								data-bs-target="#daily" type="button" role="tab">
+							Ежедневный прогноз
+						</button>
+					</li>
+				</ul>
+
+				<div class="tab-content">
+					<!-- Почасовой прогноз -->
+					<div class="tab-pane fade show active" id="hourly" role="tabpanel">
+						<div class="card">
+							<div class="card-body">
+								<!-- Контейнер с ограничением высоты и скроллом -->
+								<div style="max-height: 500px; overflow-y: auto; overflow-x: hidden;">
+									<div class="row g-2">
+										@foreach (var hourly in Model.Result.Hourly)
+										{
+											<div class="col-12 mb-2">
+												<div class="d-flex justify-content-between align-items-center p-2 border rounded">
+													<!-- Левая часть: время и иконка состояния -->
+													<div>
+														<small>@hourly.Time</small><br>
+														<img src="@hourly.ConditionIcon" alt="@hourly.ConditionText" width="25" height="25">
+													</div>
+
+													<!-- Центральная часть: температура -->
+													<div class="text-center flex-grow-1 mx-3">
+														<span class="hourly-temp"
+															  data-c="@hourly.TempC"
+															  data-f="@hourly.TempF">
+															@hourly.TempC°C
+														</span>
+													</div>
+
+													<!-- Правая часть: вероятность осадков и ощущается как -->
+													<div class="text-end">
+														<small>Дождь: @hourly.ChanceOfRainPercent%</small><br>
+														<small>
+															Ощ.:
+															<span class="hourly-feels-like"
+																  data-c="@hourly.FeelsLikeC"
+																  data-f="@hourly.FeelsLikeF">
+																@hourly.FeelsLikeC°C
+															</span>
+														</small>
+													</div>
+												</div>
+											</div>
+
+											<!-- Ограничение отображения до 10 элементов -->
+											@if (ViewBag.Index >= 9)
+											{
+												break;
+											}
+										}
+									</div>
+								</div>
+
+								<!-- Индикатор наличия дополнительных данных -->
+								@if (Model.Result.Hourly.Count > 10)
+								{
+									<div class="text-center mt-2 text-muted small">
+										<i class="bi bi-arrow-down-circle"></i>
+										Ещё @(Model.Result.Hourly.Count - 10) часов прогноза доступны при прокрутке
+									</div>
+								}
+							</div>
+						</div>
+					</div>
+
+
+					<!-- Ежедневный прогноз -->
+					<div class="tab-pane fade" id="daily" role="tabpanel">
+						<div class="card">
+							<div class="card-body">
+								<div class="row g-2">
+									@foreach (var daily in Model.Result.Daily)
+									{
+										<div class="col-12 mb-2">
+											<div class="d-flex justify-content-between align-items-center p-2 border rounded">
+												<!-- Левая часть: дата и иконка состояния -->
+												<div>
+													<strong>@daily.Date</strong><br>
+													<img src="@daily.ConditionIcon" alt="@daily.ConditionText" width="25" height="25">
+												</div>
+
+												<!-- Центральная часть: температуры (макс./мин.) -->
+												<div class="text-center flex-grow-1 mx-3">
+													<span class="daily-max-temp"
+														  data-c="@daily.MaxTempC"
+														  data-f="@daily.MaxTempF">
+														@daily.MaxTempC°C
+													</span>
+													/
+													<span class="daily-min-temp"
+														  data-c="@daily.MinTempC"
+														  data-f="@daily.MinTempF">
+														@daily.MinTempC°C
+													</span>
+												</div>
+
+												<!-- Правая часть: ветер и вероятность осадков -->
+												<div class="text-end">
+													<small>
+														Ветер:
+														<span class="daily-wind-speed"
+															  data-kph="@daily.MaxWindKph"
+															  data-mph="@daily.MaxWindMph">
+															@daily.MaxWindKph км/ч
+														</span>
+													</small><br>
+													<small>Дождь: @daily.DailyChanceOfRainPercent%</small>
+												</div>
+											</div>
+										</div>
+									}
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	}
+</div>
+
+@section Scripts {
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			const tempC = document.getElementById('tempC');
+			const tempF = document.getElementById('tempF');
+			const speedKph = document.getElementById('speedKph');
+			const speedMph = document.getElementById('speedMph');
+
+			function updateDisplay() {
+				// 1. Обновляем текущую погоду (температура и связанные величины)
+				document.querySelectorAll('.temperature, .feels-like, .windchill').forEach(element => {
+					const cValue = element.getAttribute('data-c');
+					const fValue = element.getAttribute('data-f');
+					element.textContent = tempF.checked
+						? `${fValue}°F`
+						: `${cValue}°C`;
+				});
+
+				// 2. Обновляем скорость ветра в текущей погоде
+				document.querySelectorAll('.wind-speed, .gust-speed').forEach(element => {
+					const kphValue = element.getAttribute('data-kph');
+					const mphValue = element.getAttribute('data-mph');
+					element.textContent = speedMph.checked
+						? `${mphValue} mph`
+						: `${kphValue} км/ч`;
+				});
+
+				// 3. Обновляем температуру в почасовом прогнозе
+				document.querySelectorAll('.hourly-temp').forEach(element => {
+					const cValue = element.getAttribute('data-c');
+					const fValue = element.getAttribute('data-f');
+					element.textContent = tempF.checked
+						? `${fValue}°F`
+						: `${cValue}°C`;
+				});
+
+				// 4. Обновляем температуру в ежедневном прогнозе (макс. и мин.)
+				document.querySelectorAll('.daily-max-temp, .daily-min-temp').forEach(element => {
+					const cValue = element.getAttribute('data-c');
+					const fValue = element.getAttribute('data-f');
+					element.textContent = tempF.checked
+						? `${fValue}°F`
+						: `${cValue}°C`;
+				});
+
+				// 5. Обновляем скорость ветра в ежедневном прогнозе
+				document.querySelectorAll('.daily-wind-speed').forEach(element => {
+					const kphValue = element.getAttribute('data-kph');
+					const mphValue = element.getAttribute('data-mph');
+					element.textContent = speedMph.checked
+						? `${mphValue} mph`
+						: `${kphValue} км/ч`;
+				});
+			}
+
+			// Вешаем обработчики на радио‑кнопки
+			tempC.addEventListener('change', updateDisplay);
+			tempF.addEventListener('change', updateDisplay);
+			speedKph.addEventListener('change', updateDisplay);
+			speedMph.addEventListener('change', updateDisplay);
+
+			// Инициализируем отображение при загрузке
+			updateDisplay();
+		});
+	</script>
+}
