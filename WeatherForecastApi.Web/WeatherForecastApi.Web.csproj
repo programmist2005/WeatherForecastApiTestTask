@@ -6,12 +6,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\WeatherForecastApi.Infrastructure\WeatherForecastApi.Infrastructure.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="10.0.7" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Controllers\" />
+	<ItemGroup>
+    <ProjectReference Include="..\WeatherForecastApi.Infrastructure\WeatherForecastApi.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

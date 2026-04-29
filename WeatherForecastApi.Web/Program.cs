@@ -1,7 +1,26 @@
+using Serilog;
+using WeatherForecastApi.Application;
+using WeatherForecastApi.Infrastructure;
+
 var builder = WebApplication.CreateBuilder(args);
+var config = builder.Configuration;
+
+// Configure Serilog
+Log.Logger = new LoggerConfiguration()
+    //.WriteTo.Console()
+    //.MinimumLevel.Debug()
+    .CreateBootstrapLogger();
+
+builder.Host.UseSerilog((hostContext, loggerConfiguration) =>
+            _ = loggerConfiguration.ReadFrom.Configuration(builder.Configuration));
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews()
+    .AddRazorRuntimeCompilation();
+
+// Application services
+builder.Services.AddApplicationServices();
+builder.Services.AddInfrastructureServices(config);
 
 var app = builder.Build();
 
@@ -9,7 +28,6 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -22,7 +40,7 @@ app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
+    pattern: "{controller=Weather}/{action=Index}/{id?}")
     .WithStaticAssets();
 
 
